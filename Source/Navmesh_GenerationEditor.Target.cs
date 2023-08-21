@@ -9,6 +9,7 @@ public class Navmesh_GenerationEditorTarget : TargetRules
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
-		ExtraModuleNames.AddRange( new string[] { "Navmesh_Generation" } );
+        IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_2;
+        ExtraModuleNames.AddRange( new string[] { "Navmesh_Generation" } );
 	}
 }

@@ -7,6 +7,9 @@
 #include "PolygonMesh.h"
 #include "CustomNavigationData.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(CustomNavData, Log, All);
+
+
 class FNavMeshGenerator;
 class ANavMeshController;
 

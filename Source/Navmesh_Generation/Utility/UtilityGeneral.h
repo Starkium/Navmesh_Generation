@@ -29,7 +29,9 @@ public:
 		int32 VertexCount = VertexBuffer->GetNumVertices();
 		for (int32 It = 0; It < VertexCount; It++)
 		{
-			const FVector VertexLocalPos = VertexBuffer->VertexPosition(It);
+			// probably a cleaner way of doing this
+			FVector3f TempVector = VertexBuffer->VertexPosition(It);
+			const FVector VertexLocalPos(static_cast<double>(TempVector.X), static_cast<double>(TempVector.Y), static_cast<double>(TempVector.Z));
 
 			//Converts the UStaticMesh vertex translation, rotation, and scaling in world space
 			const FVector VertexWorldPos = Mesh->GetOwner()->GetActorLocation() + Mesh->GetOwner()->GetTransform().TransformVector(VertexLocalPos);;

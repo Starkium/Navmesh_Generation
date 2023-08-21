@@ -6,6 +6,10 @@
 #include "Algo/Reverse.h"
 #include "Pathfinding.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(CustomPathFinding, Log, All);
+//static DEFINE_LOG_CATEGORY(CustomPathFinding);
+
+
 UCLASS()
 class NAVMESH_GENERATION_API UPathfinding : public UObject
 {
@@ -17,10 +21,13 @@ public:
 	* This data are required by the stupid funnel algoritm to determine the shortest path
 	* //TODO: Add condition to check if the path can be actually created (both target and requester are on the navmesh)
 	*/
-		static TArray<FPolygonData*> AStar(const FVector StartPosition, const FVector EndPosition, const ACustomNavigationData* Navmesh)
+		static TArray<FPolygonData*> AStar(const FVector StartPosition, const FVector EndPosition, const ACustomNavigationData* Navmesh) 
 	{
 		TArray<bool>ClosedList;
 		TArray<FPolygonData*>OpenList;
+
+
+		UE_LOG(CustomPathFinding, Log, TEXT("Before find closest polygon in AStar()"));
 
 		FPolygonData* StartPoly = FindClosestPolygon(StartPosition, Navmesh);
 		FPolygonData* EndPoly = FindClosestPolygon(EndPosition, Navmesh);
@@ -34,13 +41,24 @@ public:
 		OpenList.Add(EndPoly);
 
 		//Ulity array to know the polygon laready traversed by the algorithm and that should be skipped during the iteration
+
+		UE_LOG(CustomPathFinding, Log, TEXT("Before Navmesh->ResultingPoly() in AStar"));
 		for (int Index = 0; Index < Navmesh->GetResultingPoly().Num(); Index++)
 		{
 			ClosedList.Add(false);
 		}
 
+		int loopCounter = 0; // Added counter for safety
+		const int maxIterations = 10000; // Arbitrary large number
+
 		while (OpenList.Num() != 0)
 		{
+			if (loopCounter++ > maxIterations) // Safety check to prevent infinite loop
+			{
+				UE_LOG(CustomPathFinding, Warning, TEXT("AStar loop exceeded max iterations!"));
+				break;
+			}
+
 			FPolygonData* CurrentNode = OpenList.Last();
 
 			//Same condition as above, exit the loop when the path is completed
@@ -76,8 +94,21 @@ public:
 				}
 			}
 
+			UE_LOG(CustomPathFinding, Log, TEXT("Before FindNewPathPolygon() in AStar"));
 			CurrentNode = FindNewPathPolygon(Navmesh->GetResultingPoly(), CurrentNode->AdjacentPolygonList[MinIndex], CurrentMinF, CurrentMinG);
-			OpenList.Add(CurrentNode);
+
+			if (CurrentNode != nullptr)
+			{
+				// Check if the node is already in the OpenList before adding
+				//if (!OpenList.Contains(CurrentNode))
+				//{
+					//UE_LOG(CustomPathFinding, Log, TEXT("Open List add original entry"));
+					//not sure this is necessary, but fine for now
+					OpenList.Add(CurrentNode);
+				//}
+			}
+			
+			UE_LOG(CustomPathFinding, Log, TEXT("After FindNewPathPolygon() in AStar"));
 		}
 
 		return OpenList;
@@ -90,7 +121,9 @@ public:
 		static TArray<FVector> BuildPath(const FVector StartPosition, const FVector EndPosition, const ACustomNavigationData* Navmesh)
 	{
 		TArray<FVector> PathPoints;
+		UE_LOG(CustomPathFinding, Log, TEXT("Before AStar"));
 		TArray<FPolygonData*> PolygonsVisited = AStar(StartPosition, EndPosition, Navmesh);
+		UE_LOG(CustomPathFinding, Log, TEXT("After AStar"));
 
 		PathPoints.Add(EndPosition);
 
@@ -103,7 +136,9 @@ public:
 		PathPoints.Add(StartPosition);
 
 		//Reverse the array to retrieve the locations in order
+		UE_LOG(CustomPathFinding, Log, TEXT("Before Reverse"));
 		Algo::Reverse(PathPoints);
+		UE_LOG(CustomPathFinding, Log, TEXT("After Reverse"));
 		return PathPoints;
 	}
 
